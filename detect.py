@@ -22,7 +22,8 @@ if str(ROOT) not in sys.path:
 
 from models.experimental import attempt_load
 from utils.datasets import LoadImages, LoadStreams
-from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
+from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, \
+    colorstr, \
     increment_path, is_ascii, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
     strip_optimizer, xyxy2xywh
 from utils.plots import Annotator, colors
@@ -54,7 +55,7 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         hide_labels=False,  # hide labels
         hide_conf=False,  # hide confidences
         half=False,  # use FP16 half-precision inference
-        ):
+        ) -> str:
     save_img = not nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -92,9 +93,10 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
         import tensorflow as tf
         if pb:  # https://www.tensorflow.org/guide/migrate#a_graphpb_or_graphpbtxt
             def wrap_frozen_graph(gd, inputs, outputs):
-                x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""), [])  # wrapped import
+                x = tf.compat.v1.wrap_function(lambda: tf.compat.v1.import_graph_def(gd, name=""),
+                    [])  # wrapped import
                 return x.prune(tf.nest.map_structure(x.graph.as_graph_element, inputs),
-                               tf.nest.map_structure(x.graph.as_graph_element, outputs))
+                    tf.nest.map_structure(x.graph.as_graph_element, outputs))
 
             graph_def = tf.Graph().as_graph_def()
             graph_def.ParseFromString(open(w, 'rb').read())
@@ -143,7 +145,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
             visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if visualize else False
             pred = model(img, augment=augment, visualize=visualize)[0]
         elif onnx:
-            pred = torch.tensor(session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
+            pred = torch.tensor(
+                session.run([session.get_outputs()[0].name], {session.get_inputs()[0].name: img}))
         else:  # tensorflow model (tflite, pb, saved_model)
             imn = img.permute(0, 2, 3, 1).cpu().numpy()  # image in numpy
             if pb:
@@ -186,7 +189,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
 
             p = Path(p)  # to Path
             save_path = str(save_dir / p.name)  # img.jpg
-            txt_path = str(save_dir / 'labels' / p.stem) + ('' if dataset.mode == 'image' else f'_{frame}')  # img.txt
+            txt_path = str(save_dir / 'labels' / p.stem) + (
+                '' if dataset.mode == 'image' else f'_{frame}')  # img.txt
             s += '%gx%g ' % img.shape[2:]  # print string
             gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
             imc = im0.copy() if save_crop else im0  # for save_crop
@@ -203,7 +207,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                 # Write results
                 for *xyxy, conf, cls in reversed(det):
                     if save_txt:  # Write to file
-                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+                        xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(
+                            -1).tolist()  # normalized xywh
                         line = (cls, *xywh, conf) if save_conf else (cls, *xywh)  # label format
                         with open(txt_path + '.txt', 'a') as f:
                             f.write(('%g ' * len(line)).rstrip() % line + '\n')
@@ -213,7 +218,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                         label = None if hide_labels else (names[c] if hide_conf else f'{names[c]} {conf:.2f}')
                         annotator.box_label(xyxy, label, color=colors(c, True))
                         if save_crop:
-                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg', BGR=True)
+                            save_one_box(xyxy, imc, file=save_dir / 'crops' / names[c] / f'{p.stem}.jpg',
+                                BGR=True)
 
             # Print time (inference-only)
             print(f'{s}Done. ({t3 - t2:.3f}s)')
@@ -240,7 +246,8 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
                             save_path += '.mp4'
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*'mp4v'), fps,
+                            (w, h))
                     vid_writer[i].write(im0)
 
     # Print results
@@ -252,12 +259,15 @@ def run(weights='yolov5s.pt',  # model.pt path(s)
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
 
+    return save_dir
+
 
 def parse_opt():
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default='yolov5s.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default='data/images', help='file/dir/URL/glob, 0 for webcam')
-    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640], help='inference size h,w')
+    parser.add_argument('--imgsz', '--img', '--img-size', nargs='+', type=int, default=[640],
+        help='inference size h,w')
     parser.add_argument('--conf-thres', type=float, default=0.25, help='confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
     parser.add_argument('--max-det', type=int, default=1000, help='maximum detections per image')
